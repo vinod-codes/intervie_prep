@@ -20,3 +20,5 @@ const AuthLayout = async ({ children }: { children: ReactNode }) => {
 };
 
 export default AuthLayout;
+
+export const dynamic = 'force-dynamic';

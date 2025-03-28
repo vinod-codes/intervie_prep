@@ -60,3 +60,5 @@ const InterviewDetails = async ({ params }: RouteParams) => {
 };
 
 export default InterviewDetails;
+
+export const dynamic = 'force-dynamic';
