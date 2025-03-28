@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import type { CreateAssistantDTO } from "@vapi-ai/web/dist/api";
 
 import { cn } from "@/lib/utils";
 import { vapi } from "@/lib/vapi.sdk";
@@ -117,26 +118,40 @@ const Agent = ({
   const handleCall = async () => {
     setCallStatus(CallStatus.CONNECTING);
 
-    if (type === "generate") {
-      await vapi.start(process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID!, {
-        variableValues: {
-          username: userName,
-          userid: userId,
-        },
-      });
-    } else {
-      let formattedQuestions = "";
-      if (questions) {
-        formattedQuestions = questions
-          .map((question) => `- ${question}`)
-          .join("\n");
-      }
+    try {
+      if (type === "generate") {
+        await vapi.start(process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID!, {
+          variableValues: {
+            username: userName,
+            userid: userId,
+          },
+        });
+      } else {
+        let formattedQuestions = "";
+        if (questions) {
+          formattedQuestions = questions
+            .map((question) => `- ${question}`)
+            .join("\n");
+        }
 
-      await vapi.start(interviewer, {
-        variableValues: {
-          questions: formattedQuestions,
-        },
-      });
+        const systemMessage = interviewer.model?.messages?.[0]?.content || "";
+        const assistantConfig: CreateAssistantDTO = {
+          ...interviewer,
+          model: {
+            ...interviewer.model!,
+            messages: [
+              {
+                role: "system",
+                content: systemMessage.replace("{{questions}}", formattedQuestions),
+              },
+            ],
+          },
+        };
+        await vapi.start(assistantConfig);
+      }
+    } catch (error) {
+      console.error("Error starting VAPI call:", error);
+      setCallStatus(CallStatus.INACTIVE);
     }
   };
 
