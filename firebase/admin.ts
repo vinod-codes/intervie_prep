@@ -6,16 +6,37 @@ import { getFirestore } from "firebase-admin/firestore";
 function initFirebaseAdmin() {
   const apps = getApps();
 
+  // Check for required environment variables
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+
+  if (!projectId) {
+    throw new Error('FIREBASE_PROJECT_ID environment variable is not set');
+  }
+
+  if (!clientEmail) {
+    throw new Error('FIREBASE_CLIENT_EMAIL environment variable is not set');
+  }
+
+  if (!privateKey) {
+    throw new Error('FIREBASE_PRIVATE_KEY environment variable is not set');
+  }
+
   if (!apps.length) {
-    initializeApp({
-      credential: cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        // Replace newlines in the private key
-        privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-      }),
-      projectId: process.env.FIREBASE_PROJECT_ID, // Explicitly set project ID
-    });
+    try {
+      initializeApp({
+        credential: cert({
+          projectId,
+          clientEmail,
+          privateKey: privateKey.replace(/\\n/g, "\n"),
+        }),
+        projectId, // Explicitly set project ID
+      });
+    } catch (error) {
+      console.error('Error initializing Firebase Admin:', error);
+      throw error;
+    }
   }
 
   return {
